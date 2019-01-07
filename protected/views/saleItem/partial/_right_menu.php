@@ -31,6 +31,7 @@
             ?>
             <tr>
                 <td>
+                    <?php if ($item['topping'] == 0) { ?>
                     <?php echo TbHtml::linkButton('', array(
                         'color' => TbHtml::BUTTON_COLOR_SUCCESS,
                         'size' => TbHtml::BUTTON_SIZE_MINI,
@@ -40,6 +41,7 @@
                         'class' => 'update-dialog-open-link',
                         'data-update-dialog-title' => Yii::t('app', 'Select Topping'),
                     )); ?>
+                    <?php } ?>
                     <?php echo $item['item_number']; ?>
                 </td>
                 <?php if ($item['topping'] == 0) { ?>
