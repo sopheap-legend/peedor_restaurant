@@ -1,0 +1,20 @@
+<script>
+function test1() {
+   jsPrintSetup.setPrinter('\\\\camgsm-fp1\\Eng_3rdFloor_Canon_iR4750');
+   console.log(jsPrintSetup.getPrintersList());
+   console.log(jsPrintSetup.getPrinter());
+   //jsPrintSetup.setSilentPrint(1);
+   jsPrintSetup.setOption('headerStrCenter', 'bla bla main');
+   jsPrintSetup.setOption('headerStrRight', '');
+	// print current window with all frames in it
+   jsPrintSetup.printWindow(window);
+	// print desired frame
+	// jsPrintSetup.printWindow(window.frames[0]);
+   //jsPrintSetup.setSilentPrint(0);
+}
+</script>
+ </head>
+ <body>
+<a href="javascript: test1();">Test</a>
+ </body>
+</html>
