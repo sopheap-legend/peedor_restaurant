@@ -60,27 +60,27 @@
     </div>
     <div class="pull-left" id="btn_footer">
 
-        <?php foreach ($print_categories as $print_category): ?>
+        <?php //foreach ($print_categories as $print_category): ?>
 
-        <?php echo TbHtml::linkButton(Yii::t('app', $print_category['name']), array(
+        <?php /*echo TbHtml::linkButton(Yii::t('app', $print_category['name']), array(
             'color' => TbHtml::BUTTON_COLOR_PRIMARY,
             'size' => TbHtml::BUTTON_SIZE_SMALL,
             'icon' => ' ace-icon fa fa-print',
             //'class' => 'btn-confirm-order',
             'url' => Yii::app()->createUrl('SaleItem/PrintKitchen'),
             'title' => Yii::t('app', 'Customer'),
-        )); ?>
+        )); */?>
 
-        <?php endforeach; ?>
+        <?php //endforeach; ?>
 
-        <?php echo TbHtml::linkButton(Yii::t('app', 'Customer'), array(
+        <?php /*echo TbHtml::linkButton(Yii::t('app', 'Customer'), array(
             'color' => TbHtml::BUTTON_COLOR_PRIMARY,
             'size' => TbHtml::BUTTON_SIZE_SMALL,
             'icon' => ' ace-icon fa fa-print',
             //'class' => 'btn-confirm-order',
             'url' => Yii::app()->createUrl('SaleItem/PrintCustomer?view='.$view),
             'title' => Yii::t('app', 'Customer'),
-        )); ?>
+        )); */?>
 
 
     </div>

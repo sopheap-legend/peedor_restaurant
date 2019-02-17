@@ -46,6 +46,7 @@ $cs = Yii::app()->getClientScript();
                 //$line = $item['line'];
                 //$item_parent_id = $item['item_parent_id'];
                 $unit_name = '';
+                //echo $item_id;
                 ?>
                 <tr>
                     <td>

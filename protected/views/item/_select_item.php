@@ -8,7 +8,7 @@
 		//'id',
 		'item_number',  
                 array('name'=>'name',
-                      'value'=>'CHtml::link($data->name, Yii::app()->createUrl("saleItem/indexpara",array("item_id"=>$data->id, "item_parent_id" =>' . $item_parent_id . ',"view" => ' . $view . ')),array("class"=>"list-item"))',
+                      'value'=>'CHtml::link($data->name, Yii::app()->createUrl("saleItem/indexpara",array("item_id"=>$data->id, "item_parent_id" =>' . $item_parent_id . ',"line"=>' . $line . ',"view" => ' . $view . ')),array("class"=>"list-item"))',
                       'type'=>'raw',
                 ),
 		array('name' => 'category_id',

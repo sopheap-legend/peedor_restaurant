@@ -1,3 +1,4 @@
+<?php //echo $cartnum; ?>
 <?php if (isset($table_info)) { ?>
     <span class="label label-info label-xlg">
         <?php echo '<b>' .  $table_info->name  .' - ' . Common::GroupAlias(Yii::app()->orderingCart->getGroupId()) . '</b>'; ?>
@@ -15,14 +16,14 @@
                     'size' => TbHtml::BUTTON_SIZE_MINI,
                     'icon' => ' ace-icon fa fa-pencil-square-o white',
                     'class' => 'btn-edit-order',
-                    'url' => Yii::app()->createUrl('SaleItem/editOrdered'),
+                    'url' => Yii::app()->createUrl('SaleItem/editOrdered',array('view'=>'edit_order','cartnum'=>$cartnum)),
                     'title' => Yii::t('app', 'Edit Ordered'),
                 )); ?>
             <?php }} ?>
     <?php } ?>
 <?php }else{ ?>
     <?php if(Yii::app()->user->checkAccess('sale.edit')) { ?>
-        <?php if(isset($view)){
+        <?php /*if(isset($view)){
             if($view=='cashier') {
                 ?>
                 <?php echo TbHtml::linkButton(Yii::t('app', 'New Order'), array(
@@ -33,24 +34,24 @@
                     'url' => Yii::app()->createUrl('SaleItem/index'),
                     'title' => Yii::t('app', 'New Order'),
                 )); ?>
-            <?php }} ?>
+            <?php }}*/ ?>
     <?php } ?>
 <?php } ?>
-<?php if (isset($ordering_status)) { ?>
 
+<?php if (isset($ordering_status)) { ?>
     <!--<span class="order-status <?php //echo $ordering_status_span; ?>">
         <i class="<?php //echo $ordering_status_icon; ?>"></i>
         <?php // $ordering_msg; ?>
     </span>-->
 
-    <?php if ($ordering_status=='2') { ?>
+    <?php if ($ordering_status=='2'&& @$view!='cashier' && !empty($items)) { ?>
 
         <?php echo TbHtml::linkButton(Yii::t('app', 'Confirm'), array(
             'color' => TbHtml::BUTTON_COLOR_PRIMARY,
             'size' => TbHtml::BUTTON_SIZE_MINI,
             'icon' => ' ace-icon fa fa-floppy-o white',
             'class' => 'btn-confirm-order',
-            'url' => Yii::app()->createUrl('SaleItem/confirmOrder'),
+            'url' => Yii::app()->createUrl('SaleItem/confirmOrder',array('view'=>'cashier','cart_order'=>Yii::app()->orderingCart->getCartNum())),
             'title' => Yii::t('app', 'Confirm Order'),
         )); ?>
 

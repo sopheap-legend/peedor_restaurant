@@ -114,153 +114,369 @@ class SaleOrder extends CActiveRecord
     public function getOrderCart($desk_id,$group_id,$location_id)
     {
 
-        $sql = "SELECT item_number,item_id,line,`name`,quantity,price,discount_amount discount,
-                total,client_id,desk_id,zone_id,employee_id,qty_in_stock,topping,item_parent_id,category_id
-                FROM v_order_cart
-                WHERE desk_id=:desk_id
-                AND group_id=:group_id
-                AND location_id=:location_id
-                AND status=:status
-                AND deleted_at is null
-                ORDER BY path,modified_date desc";
+        $sql = "select * 
+              from (
+                    SELECT 0 child_id,sale_id,item_number,item_id,line,`name`,quantity,price,discount_amount discount,cart_order,cart_status,
+                    total,client_id,desk_id,zone_id,employee_id,qty_in_stock,topping,item_parent_id,category_id,item_id item_sort,1 Sorting
+                    FROM v_order_cart
+                    WHERE desk_id=:desk_id
+                    AND group_id=:group_id
+                    AND location_id=:location_id
+                    AND status=:status
+                    AND deleted_at is null
+                    union all
+                    SELECT child_id,sale_id,item_number,item_id,line,`name`,quantity,price,discount,cart_order,cart_status,
+                    price AS total,client_id,desk_id,zone_id,employee_id,
+                    quantity qty_in_stock,topping,item_parent_id,category_id,item_parent_id item_sort,2 Sorting
+                    FROM v_topping_add
+                    WHERE desk_id=:desk_id2
+                    AND group_id=:group_id2
+                    AND location_id=:location_id2
+                    AND status=:status2
+                    AND deleted_at is null
+                )as l1
+                ORDER BY sale_id,item_sort,line,Sorting";
 
         return Yii::app()->db->createCommand($sql)->queryAll(true, array(
                 ':desk_id' => $desk_id,
                 ':group_id' => $group_id,
                 ':location_id' => $location_id,
-                ':status' => Yii::app()->params['num_one']
+                ':status' => Yii::app()->params['num_one'],
+                ':desk_id2' => $desk_id,
+                ':group_id2' => $group_id,
+                ':location_id2' => $location_id,
+                ':status2' => Yii::app()->params['num_one']
             )
         );
     }
 
+
+    public function getOrderCart4Payment($desk_id,$group_id,$location_id)
+    {
+
+        $sql = "select * 
+              from (
+                    SELECT 0 child_id,sale_id,item_number,item_id,line,`name`,quantity,price,discount_amount discount,
+                    total,client_id,desk_id,zone_id,employee_id,qty_in_stock,topping,item_parent_id,category_id,item_id item_sort,1 Sorting
+                    FROM v_order_cart
+                    WHERE desk_id=:desk_id
+                    AND group_id=:group_id
+                    AND location_id=:location_id
+                    AND status in (:status,:status_confirmed)
+                    AND deleted_at is null
+                    union all
+                    SELECT child_id,sale_id,item_number,item_id,line,`name`,quantity,price,discount,
+                    price AS total,client_id,desk_id,zone_id,employee_id,
+                    quantity qty_in_stock,topping,item_parent_id,category_id,item_parent_id item_sort,2 Sorting
+                    FROM v_topping_add
+                    WHERE desk_id=:desk_id2
+                    AND group_id=:group_id2
+                    AND location_id=:location_id2
+                    AND status in (:status2,:status_confirmed2)
+                    AND deleted_at is null
+                )as l1
+                ORDER BY sale_id,item_sort,line,Sorting";
+
+        return Yii::app()->db->createCommand($sql)->queryAll(true, array(
+                ':desk_id' => $desk_id,
+                ':group_id' => $group_id,
+                ':location_id' => $location_id,
+                ':status' => Yii::app()->params['num_one'],
+                'status_confirmed' => Yii::app()->params['sale_confirmed'],
+                ':desk_id2' => $desk_id,
+                ':group_id2' => $group_id,
+                ':location_id2' => $location_id,
+                ':status2' => Yii::app()->params['num_one'],
+                'status_confirmed2' => Yii::app()->params['sale_confirmed'],
+            )
+        );
+    }
+
+    /*public function getNumberCart($desk_id,$group_id,$location_id)
+    {
+        $sql="select COUNT(distinct sale_id) nRec 
+            FROM v_order_cart
+            WHERE desk_id=:desk_id
+            AND group_id=:group_id
+            AND location_id=:location_id
+            AND status=:status
+            AND deleted_at is null";
+
+        return Yii::app()->db->createCommand($sql)
+            ->bindValue(':desk_id' , $desk_id)
+            ->bindValue(':group_id' , $group_id)
+            ->bindValue(':location_id' , $location_id)
+            ->bindValue(':status' , Yii::app()->params['num_one'])
+            ->queryScalar();
+    }*/
+
+
+    public function getDetailCartNumber($desk_id,$group_id,$location_id)
+    {
+        $sql="select distinct cart_order sale_id
+            FROM v_order_cart
+            WHERE desk_id=:desk_id
+            AND group_id=:group_id
+            AND location_id=:location_id
+            AND (status =:status or temp_status=:temp_status)
+            AND deleted_at is null
+            order by cart_order";
+
+        return Yii::app()->db->createCommand($sql)
+            ->bindValue(':desk_id' , $desk_id)
+            ->bindValue(':group_id' , $group_id)
+            ->bindValue(':location_id' , $location_id)
+            ->bindValue(':status' , Yii::app()->params['num_one'])
+            ->bindValue(':temp_status' , Yii::app()->params['temp_edit_status'])
+            ->queryAll();
+    }
+
+    public function getCartOrderId($sale_id,$cart_id)
+    {
+
+    }
+
     public function getOrderCartGrid($desk_id,$group_id,$location_id,$item_id)
     {
-        $sql = "SELECT item_number,sale_id,item_id,line,`name`,quantity,price,discount_amount discount,item_parent_id,
-                total,client_id,desk_id,zone_id,employee_id,qty_in_stock,topping,item_parent_id,category_id
-                FROM v_order_cart
-                WHERE desk_id=:desk_id
-                AND group_id=:group_id
-                AND location_id=:location_id
-                AND status=:status
-                and (item_id=:item_id or item_parent_id=:item_id_2)
-                AND deleted_at is null
-                ORDER BY path,modified_date desc";
+
+        $sql="select * 
+              from (
+                    SELECT 0 child_id,sale_id,item_number,item_id,line,`name`,quantity,price,discount_amount discount,
+                    total,client_id,desk_id,zone_id,employee_id,qty_in_stock,topping,item_parent_id,category_id,item_id item_sort,1 Sorting
+                    FROM v_order_cart
+                    WHERE desk_id=:desk_id
+                    AND group_id=:group_id
+                    AND location_id=:location_id
+                    AND status =:status
+                    AND deleted_at is null
+                    union all
+                    SELECT child_id,sale_id,item_number,item_id,line,`name`,quantity,price,discount,
+                    price AS total,client_id,desk_id,zone_id,employee_id,
+                    quantity qty_in_stock,topping,item_parent_id,category_id,item_parent_id item_sort,2 Sorting
+                    FROM v_topping_add
+                    WHERE desk_id=:desk_id2
+                    AND group_id=:group_id2
+                    AND location_id=:location_id2
+                    AND status = :status2
+                    AND deleted_at is null
+                )as l1
+                where (item_id=:item_id or item_parent_id=:item_id_2)
+                ORDER BY sale_id,item_sort,line,Sorting";
 
         $rawData = Yii::app()->db->createCommand($sql)->queryAll(true, array(
             ':desk_id' => $desk_id,
             ':group_id' => $group_id,
             ':location_id' => $location_id,
             ':status' => Yii::app()->params['num_one'],
+            //':temp_status' => Yii::app()->params['temp_edit_status'],
+            ':desk_id2' => $desk_id,
+            ':group_id2' => $group_id,
+            ':location_id2' => $location_id,
+            ':status2' => Yii::app()->params['num_one'],
+            //':temp_status2' => Yii::app()->params['temp_edit_status'],
             ':item_id' => $item_id,
-            ':item_id_2' => $item_id)
+            ':item_id_2' => $item_id
+            )
             );
 
-        /*$dataProvider = new CArrayDataProvider($rawData, array(
-            'keyField'=>false,
-            'sort' => array(
-                'attributes' => array(
-                    'item_id','line'
-                ),
-            ),
-            'pagination' => false,
-        ));*/
-
-        //return $dataProvider; // Return as array object
         return $rawData;
     }
 
 
-    public function getOrderCartCashier($desk_id,$group_id,$location_id)
+    public function getOrderCartIndex($desk_id,$group_id,$location_id)
     {
 
-        /*$sql = "SELECT item_number,item_id,max(line) line,`name`,sum(quantity) quantity,min(price) price,
-                sum(discount_amount) discount,max(modified_date) modified_date,item_parent_id,
-                sum(total) total,client_id,desk_id,zone_id,employee_id,qty_in_stock,topping,category_id 
-                from 
-                (
-                    SELECT item_number,item_id,line,`name`,quantity,price,discount_amount,path,item_parent_id,
-                    modified_date,total,client_id,desk_id,zone_id,employee_id,qty_in_stock,topping,category_id
-                    FROM v_order_cart pr
+        $sql = "select * 
+              from (
+                    SELECT 0 child_id,sale_id,item_number,item_id,line,`name`,quantity,price,discount_amount discount,cart_order,cart_status,
+                    total,client_id,desk_id,zone_id,employee_id,qty_in_stock,topping,item_parent_id,category_id,item_id item_sort,1 Sorting
+                    FROM v_order_cart
                     WHERE desk_id=:desk_id
                     AND group_id=:group_id
                     AND location_id=:location_id
                     AND status=:status
-                    AND deleted_at is null 
-                    ORDER BY path,modified_date desc
+                    AND cart_status=:cart_status
+                    AND deleted_at is null
+                    union all
+                    SELECT child_id,sale_id,item_number,item_id,line,`name`,quantity,price,discount,cart_order,cart_status,
+                    price AS total,client_id,desk_id,zone_id,employee_id,
+                    quantity qty_in_stock,topping,item_parent_id,category_id,item_parent_id item_sort,2 Sorting
+                    FROM v_topping_add
+                    WHERE desk_id=:desk_id2
+                    AND group_id=:group_id2
+                    AND location_id=:location_id2
+                    AND status=:status2
+                    AND cart_status=:cart_status2
+                    AND deleted_at is null
                 )as l1
-                group by item_number,item_id,`name`,client_id,desk_id,zone_id,employee_id,item_parent_id,
-                qty_in_stock,topping,category_id
-                -- where item_parent_id=0
-                ";*/
-
-        $sql="
-            SELECT item_number,item_id,`name`,COUNT(quantity) quantity,MIN(price) price,
-                            SUM(discount_amount) discount,MAX(modified_date) modified_date,
-                            SUM(total) total,client_id,desk_id,zone_id,employee_id,qty_in_stock,SUM(topping) topping 
-                            FROM 
-                            (
-                                SELECT 
-                                CASE
-                        WHEN pr.item_parent_id>0 THEN 
-                        (SELECT item_number FROM item it WHERE it.id=pr.item_parent_id)
-                        ELSE pr.item_number
-                        END item_number,		    
-                        CASE
-                        WHEN pr.item_parent_id>0 THEN pr.item_parent_id			
-                        ELSE pr.item_id
-                        END item_id,
-                        CASE
-                        WHEN pr.item_parent_id>0 THEN 
-                        (SELECT `name` FROM item it WHERE it.id=pr.item_parent_id)
-                        ELSE pr.name
-                        END `name`,
-                        CASE
-                        WHEN pr.item_parent_id>0 THEN NULL
-                        -- (SELECT item_number FROM item it WHERE it.id=pr.item_parent_id)
-                        ELSE pr.quantity
-                        END quantity,
-                                pr.price,pr.discount_amount,pr.path,                    
-                                pr.modified_date,pr.total,pr.client_id,pr.desk_id,pr.zone_id,
-                                pr.employee_id,pr.qty_in_stock,pr.topping,pr.category_id
-                                FROM v_order_cart pr
-                                WHERE desk_id=:desk_id
-                                AND group_id=:group_id
-                                AND location_id=:location_id
-                                AND status=:status
-                                AND deleted_at is null 
-                                ORDER BY path,modified_date desc
-                            )AS l1
-                            GROUP BY item_number,item_id,`name`,client_id,desk_id,zone_id,employee_id,
-                            qty_in_stock";
+                ORDER BY sale_id,item_sort,line,Sorting";
 
         return Yii::app()->db->createCommand($sql)->queryAll(true, array(
                 ':desk_id' => $desk_id,
                 ':group_id' => $group_id,
                 ':location_id' => $location_id,
-                ':status' => Yii::app()->params['num_one']
+                ':status' => Yii::app()->params['num_one'],
+                ':cart_status' => Yii::app()->params['cart_new_order_status'],
+                ':desk_id2' => $desk_id,
+                ':group_id2' => $group_id,
+                ':location_id2' => $location_id,
+                ':status2' => Yii::app()->params['num_one'],
+                ':cart_status2' => Yii::app()->params['cart_new_order_status'],
             )
         );
+    }
 
-        /*$rawData = Yii::app()->db->createCommand($sql)->queryAll(true, array(
+
+    public function getOrderCartEdit($desk_id,$group_id,$location_id,$cartnum='')
+    {
+        $sql = "select * 
+              from (
+                    SELECT 0 child_id,sale_id,item_number,item_id,line,`name`,quantity,price,discount_amount discount,cart_order,cart_status,
+                    total,client_id,desk_id,zone_id,employee_id,qty_in_stock,topping,item_parent_id,category_id,item_id item_sort,1 Sorting
+                    FROM v_order_cart
+                    WHERE desk_id=:desk_id
+                    AND group_id=:group_id
+                    AND location_id=:location_id
+                    AND (status =:status or temp_status=:temp_status)
+                    AND cart_status=:cart_status
+                    AND deleted_at is null
+                    union all
+                    SELECT child_id,sale_id,item_number,item_id,line,`name`,quantity,price,discount,cart_order,cart_status,
+                    price AS total,client_id,desk_id,zone_id,employee_id,
+                    quantity qty_in_stock,topping,item_parent_id,category_id,item_parent_id item_sort,2 Sorting
+                    FROM v_topping_add
+                    WHERE desk_id=:desk_id2
+                    AND group_id=:group_id2
+                    AND location_id=:location_id2
+                    AND (status =:status2 or temp_status=:temp_status2)
+                    AND cart_status=:cart_status2
+                    AND deleted_at is null
+                )as l1
+                where cart_order=:cartnum
+                ORDER BY sale_id,item_sort,line,Sorting";
+
+        return Yii::app()->db->createCommand($sql)->queryAll(true, array(
                 ':desk_id' => $desk_id,
                 ':group_id' => $group_id,
                 ':location_id' => $location_id,
-                ':status' => Yii::app()->params['num_one']
+                ':status' => Yii::app()->params['num_one'],
+                ':temp_status' => Yii::app()->params['temp_edit_status'],
+                ':cart_status' => Yii::app()->params['cart_confirmed_status'],
+                ':desk_id2' => $desk_id,
+                ':group_id2' => $group_id,
+                ':location_id2' => $location_id,
+                ':status2' => Yii::app()->params['num_one'],
+                ':temp_status2' => Yii::app()->params['temp_edit_status'],
+                ':cart_status2' => Yii::app()->params['cart_confirmed_status'],
+                ':cartnum' => $cartnum
             )
         );
-
-        $dataProvider = new CArrayDataProvider($rawData, array(
-            'keyField'=>'id',
-            'sort' => array(
-                'attributes' => array(
-                    'item_id','line'
-                ),
-            ),
-            'pagination' => false,
-        ));*/
-
-        //return $dataProvider; // Return as array object
     }
+
+
+    public function getOrderCartCashier($desk_id,$group_id,$location_id)
+    {
+        $sql="SELECT l2.item_sort item_id,0 price,0 discount,null modified_date,
+                (SELECT item_number FROM item it WHERE it.id=l2.item_sort LIMIT 1) item_number,
+                (SELECT `name` FROM item it WHERE it.id=l2.item_sort LIMIT 1) `name`,
+                ItemQry quantity,ToppingQty topping,total,
+                null client_id,null desk_id,null zone_id,null employee_id,0 qty_in_stock
+                FROM(
+                    SELECT item_sort,
+                    SUM(total) total,
+                    COUNT(CASE WHEN item_type='Parent' THEN 1 ELSE NULL END) ItemQry,
+                    COUNT(CASE WHEN item_type='Child' THEN 1 ELSE NULL END) ToppingQty
+                    FROM(
+                        SELECT 'Parent' item_type,sale_id,item_number,item_id,line,`name`,quantity,price,discount_amount,
+                        total,client_id,desk_id,zone_id,employee_id,qty_in_stock,topping,item_parent_id,category_id,item_id item_sort,1 Sorting
+                        FROM v_order_cart
+                        WHERE desk_id=:desk_id
+                        AND group_id=:group_id
+                        AND location_id=:location_id
+                        AND (status in (:status,3) or temp_status=:temp_status)
+                        AND deleted_at IS NULL
+                        UNION ALL
+                        SELECT 'Child' item_type,sale_id,item_number,item_id,line,`name`,quantity,price,discount,
+                        price AS total,client_id,desk_id,zone_id,employee_id,
+                        quantity qty_in_stock,topping,item_parent_id,category_id,item_parent_id item_sort,2 Sorting
+                        FROM v_topping_add
+                        WHERE desk_id=:desk_id2
+                        AND group_id=:group_id2
+                        AND location_id=:location_id2
+                        AND (status in (:status2,3) or temp_status=:temp_status2)
+                        AND deleted_at IS NULL 
+                    )AS l1
+                    GROUP BY item_sort
+                )AS l2";
+
+        return Yii::app()->db->createCommand($sql)->queryAll(true, array(
+                ':desk_id' => $desk_id,
+                ':group_id' => $group_id,
+                ':location_id' => $location_id,
+                ':status' => Yii::app()->params['num_one'],
+                ':temp_status' => Yii::app()->params['temp_edit_status'],
+                ':desk_id2' => $desk_id,
+                ':group_id2' => $group_id,
+                ':location_id2' => $location_id,
+                ':status2' => Yii::app()->params['num_one'],
+                ':temp_status2' => Yii::app()->params['temp_edit_status'],
+            )
+        );
+    }
+
+    public function getIndividualCard($desk_id,$group_id,$location_id,$cartnum='')
+    {
+        //echo $cartnum;
+        $sql="SELECT l2.item_sort item_id,0 price,0 discount,null modified_date,
+                (SELECT item_number FROM item it WHERE it.id=l2.item_sort LIMIT 1) item_number,
+                (SELECT `name` FROM item it WHERE it.id=l2.item_sort LIMIT 1) `name`,
+                ItemQry quantity,ToppingQty topping,total,
+                null client_id,null desk_id,null zone_id,null employee_id,0 qty_in_stock
+                FROM(
+                    SELECT item_sort,
+                    SUM(total) total,
+                    COUNT(CASE WHEN item_type='Parent' THEN 1 ELSE NULL END) ItemQry,
+                    COUNT(CASE WHEN item_type='Child' THEN 1 ELSE NULL END) ToppingQty
+                    FROM(
+                        SELECT 'Parent' item_type,sale_id,item_number,item_id,line,`name`,quantity,price,discount_amount,cart_order,
+                        total,client_id,desk_id,zone_id,employee_id,qty_in_stock,topping,item_parent_id,category_id,item_id item_sort,1 Sorting
+                        FROM v_order_cart
+                        WHERE desk_id=:desk_id
+                        AND group_id=:group_id
+                        AND location_id=:location_id
+                        AND (status =:status or temp_status=:temp_status)
+                        AND deleted_at IS NULL
+                        UNION ALL
+                        SELECT 'Child' item_type,sale_id,item_number,item_id,line,`name`,quantity,price,discount,cart_order,
+                        price AS total,client_id,desk_id,zone_id,employee_id,
+                        quantity qty_in_stock,topping,item_parent_id,category_id,item_parent_id item_sort,2 Sorting
+                        FROM v_topping_add
+                        WHERE desk_id=:desk_id2
+                        AND group_id=:group_id2
+                        AND location_id=:location_id2
+                        AND (status =:status or temp_status=:temp_status2)
+                        AND deleted_at IS NULL 
+                    )AS l1
+                    where cart_order=:cartnum
+                    GROUP BY item_sort
+                )AS l2";
+
+        return Yii::app()->db->createCommand($sql)->queryAll(true, array(
+                ':desk_id' => $desk_id,
+                ':group_id' => $group_id,
+                ':location_id' => $location_id,
+                ':status' => Yii::app()->params['num_one'],
+                ':temp_status' => Yii::app()->params['temp_edit_status'],
+                ':desk_id2' => $desk_id,
+                ':group_id2' => $group_id,
+                ':location_id2' => $location_id,
+                ':status2' => Yii::app()->params['num_one'],
+                ':temp_status2' => Yii::app()->params['temp_edit_status'],
+                ':cartnum' => $cartnum
+            )
+        );
+    }
+
 
     public function getOrderToKitchen($sale_id, $location_id, $category_id)
     {
@@ -317,11 +533,17 @@ class SaleOrder extends CActiveRecord
         $total = 0;
         $discount_amount = 0;
 
-        $sql="SELECT sale_id,sum(quantity) quantity,
+        /*$sql="SELECT sale_id,sum(quantity) quantity,
                     SUM(price*quantity) sub_total,
                     SUM(price*quantity) - (SUM(price*quantity)*IFNULL(so.discount_amount,0)/100) total,
                     SUM(price*quantity)*IFNULL(so.discount_amount,0)/100 discount_amount
-                FROM v_order_cart oc JOIN sale_order so
+                FROM (
+                SELECT sale_id,quantity,price,desk_id,group_id,location_id,status,deleted_at
+                    FROM v_order_cart
+                    UNION ALL
+                    SELECT sale_id,quantity,price,desk_id,group_id,location_id,status,deleted_at
+                    FROM v_topping_add                
+                )as oc JOIN sale_order so
                             ON so.id=oc.sale_id 
                             and so.desk_id=oc.desk_id
                             and so.group_id=oc.group_id
@@ -329,16 +551,38 @@ class SaleOrder extends CActiveRecord
                 WHERE oc.desk_id=:desk_id 
                 AND oc.group_id=:group_id
                 AND oc.location_id=:location_id
-                AND oc.status=:status
+                AND (oc.status in (:status,:sale_confirmed) or temp_status=:temp_edit_status) 
                 AND ISNULL(oc.deleted_at)
-                GROUP BY sale_id";
+                GROUP BY sale_id";*/
+
+        $sql="select quantity,
+                    sub_total,
+                    sub_total - (sub_total*IFNULL(discount_amount,0)/100) total,
+                    sub_total*IFNULL(discount_amount,0)/100 discount_amount
+            from (select sum(quantity) quantity,SUM(price*quantity) sub_total,max(discount_amount) discount_amount
+                FROM (
+                    SELECT sale_id,quantity,price,desk_id,group_id,location_id,status,deleted_at,discount_amount,temp_status,cart_status
+                        FROM v_order_cart
+                        UNION ALL
+                        SELECT sale_id,quantity,price,desk_id,group_id,location_id,status,deleted_at,discount,temp_status,cart_status
+                        FROM v_topping_add                
+                    )as oc
+                    WHERE oc.desk_id=:desk_id 
+                    AND oc.group_id=:group_id
+                    AND oc.location_id=:location_id
+                    AND ((oc.status = :status and cart_status=:cart_confirmed) or temp_status=:temp_edit_status) 
+                    AND ISNULL(oc.deleted_at)                
+            )as l2";
 
 
         $result = Yii::app()->db->createCommand($sql)->queryAll(true, array(
             ':desk_id' => $desk_id,
             ':group_id' => $group_id,
             ':location_id' => $location_id,
-            ':status' => Yii::app()->params['num_one']
+            ':status' => Yii::app()->params['num_one'],
+            ':cart_confirmed' => Yii::app()->params['cart_confirmed_status'],
+            ':temp_edit_status' => Yii::app()->params['temp_edit_status']
+
         ));
 
         if ($result) {
@@ -353,10 +597,115 @@ class SaleOrder extends CActiveRecord
         return array($quantity, $sub_total, $total, $discount_amount);
     }
 
-    public function orderAdd($item_id, $table_id, $group_id, $client_id, $employee_id, $quantity, $price_tier_id, $item_parent_id, $location_id)
-    {
 
-        $sql = "SELECT func_order_add(:item_id,:item_number,:desk_id,:group_id,:client_id,:employee_id,:quantity,:price_tier_id,:item_parent_id,:location_id) item_id";
+    public function getEditTotal($desk_id,$group_id,$location_id,$cart_order)
+    {
+        //echo $cart_order;
+
+        $quantity = 0;
+        $sub_total = 0;
+        $total = 0;
+        $discount_amount = 0;
+
+
+        $sql="select quantity,
+                    sub_total,
+                    sub_total - (sub_total*IFNULL(discount_amount,0)/100) total,
+                    sub_total*IFNULL(discount_amount,0)/100 discount_amount
+            from (select sum(quantity) quantity,SUM(price*quantity) sub_total,max(discount_amount) discount_amount
+                FROM (
+                    SELECT sale_id,quantity,price,desk_id,group_id,location_id,status,deleted_at,discount_amount,temp_status,cart_status,cart_order
+                        FROM v_order_cart
+                        UNION ALL
+                        SELECT sale_id,quantity,price,desk_id,group_id,location_id,status,deleted_at,discount,temp_status,cart_status,cart_order
+                        FROM v_topping_add                
+                    )as oc
+                    WHERE oc.desk_id=:desk_id 
+                    AND oc.group_id=:group_id
+                    AND oc.location_id=:location_id
+                    AND ((oc.status = :status and cart_status=:cart_confirmed) or temp_status=:temp_edit_status) 
+                    and cart_order=:cart_order
+                    AND ISNULL(oc.deleted_at)                
+            )as l2";
+
+
+        $result = Yii::app()->db->createCommand($sql)->queryAll(true, array(
+            ':desk_id' => $desk_id,
+            ':group_id' => $group_id,
+            ':location_id' => $location_id,
+            ':status' => Yii::app()->params['num_one'],
+            ':cart_confirmed' => Yii::app()->params['cart_confirmed_status'],
+            ':temp_edit_status' => Yii::app()->params['temp_edit_status'],
+            ':cart_order' => $cart_order,
+        ));
+
+        if ($result) {
+            foreach ($result as $record) {
+                $quantity = $record['quantity'];
+                $sub_total = $record['sub_total'];
+                $total = $record['total'];
+                $discount_amount = $record['discount_amount'];
+            }
+        }
+
+        return array($quantity, $sub_total, $total, $discount_amount);
+    }
+
+
+    public function getIndexTotal($desk_id,$group_id,$location_id)
+    {
+        //echo $cart_order;
+
+        $quantity = 0;
+        $sub_total = 0;
+        $total = 0;
+        $discount_amount = 0;
+
+
+        $sql="select quantity,
+                    sub_total,
+                    sub_total - (sub_total*IFNULL(discount_amount,0)/100) total,
+                    sub_total*IFNULL(discount_amount,0)/100 discount_amount
+            from (select sum(quantity) quantity,SUM(price*quantity) sub_total,max(discount_amount) discount_amount
+                FROM (
+                    SELECT sale_id,quantity,price,desk_id,group_id,location_id,status,deleted_at,discount_amount,temp_status,cart_status,cart_order
+                        FROM v_order_cart
+                        UNION ALL
+                        SELECT sale_id,quantity,price,desk_id,group_id,location_id,status,deleted_at,discount,temp_status,cart_status,cart_order
+                        FROM v_topping_add                
+                    )as oc
+                    WHERE oc.desk_id=:desk_id 
+                    AND oc.group_id=:group_id
+                    AND oc.location_id=:location_id
+                    AND oc.status = :status
+                    and cart_status=:cart_status
+                    AND ISNULL(oc.deleted_at)                
+            )as l2";
+
+        $result = Yii::app()->db->createCommand($sql)->queryAll(true, array(
+            ':desk_id' => $desk_id,
+            ':group_id' => $group_id,
+            ':location_id' => $location_id,
+            ':status' => Yii::app()->params['num_one'],
+            ':cart_status' => Yii::app()->params['cart_new_order_status'],
+        ));
+
+        if ($result) {
+            foreach ($result as $record) {
+                $quantity = $record['quantity'];
+                $sub_total = $record['sub_total'];
+                $total = $record['total'];
+                $discount_amount = $record['discount_amount'];
+            }
+        }
+
+        return array($quantity, $sub_total, $total, $discount_amount);
+    }
+
+
+    public function orderAdd($item_id, $table_id, $group_id, $client_id, $employee_id, $quantity, $price_tier_id, $item_parent_id, $location_id,$cart_id,$method)
+    {
+        $sql = "SELECT func_order_add(:item_id,:item_number,:desk_id,:group_id,:client_id,:employee_id,:quantity,:price_tier_id,:item_parent_id,:location_id,:cart_id,:method) item_id";
 
         $result = Yii::app()->db->createCommand($sql)->queryAll(true,
             array(
@@ -369,7 +718,38 @@ class SaleOrder extends CActiveRecord
                 ':quantity' => $quantity,
                 ':price_tier_id' => $price_tier_id,
                 ':item_parent_id' => $item_parent_id,
-                ':location_id' => $location_id
+                ':location_id' => $location_id,
+                ':cart_id' => $cart_id,
+                ':method' => $method
+            )
+        );
+
+
+        foreach ($result as $record) {
+            $id = $record['item_id'];
+        }
+
+        return $id;
+    }
+
+    public function orderToppingAdd($item_id, $table_id, $group_id, $client_id, $employee_id, $quantity, $price_tier_id, $item_parent_id, $location_id,$line)
+    {
+
+        $sql = "SELECT func_topping_add(:item_id,:item_number,:desk_id,:group_id,:client_id,:employee_id,:quantity,:price_tier_id,:item_parent_id,:location_id,:line) item_id";
+
+        $result = Yii::app()->db->createCommand($sql)->queryAll(true,
+            array(
+                ':item_id' => $item_id,
+                ':item_number' => $item_id,
+                ':desk_id' => $table_id,
+                ':group_id' => $group_id,
+                ':client_id' => $client_id,
+                ':employee_id' => $employee_id,
+                ':quantity' => $quantity,
+                ':price_tier_id' => $price_tier_id,
+                ':item_parent_id' => $item_parent_id,
+                ':location_id' => $location_id,
+                ':line' => $line
             )
         );
 
@@ -405,10 +785,10 @@ class SaleOrder extends CActiveRecord
         return $result_id;
     }
 
-    public function orderDel($item_id,$line, $item_parent_id, $table_id, $group_id)
+    public function orderDel($item_id,$line, $item_parent_id, $table_id, $group_id,$child_id=0)
     {
         //$sql = "CALL proc_del_item_cart(:item_id,:item_parent_id,:desk_id,:group_id,:location_id)";
-        $sql = "SELECT func_order_del(:item_id,:line,:item_parent_id,:desk_id,:group_id, :location_id, :employee_id) result_id";
+        $sql = "SELECT func_order_del(:item_id,:line,:item_parent_id,:desk_id,:group_id, :location_id, :employee_id,:child_id) result_id";
 
         $result = Yii::app()->db->createCommand($sql)->queryAll(true,
             array(
@@ -418,7 +798,8 @@ class SaleOrder extends CActiveRecord
                 ':desk_id' => $table_id,
                 ':group_id' => $group_id,
                 ':location_id' => Common::getCurLocationID(),
-                ':employee_id' => Common::getEmployeeID()
+                ':employee_id' => Common::getEmployeeID(),
+                ':child_id' => $child_id
             )
         );
 
@@ -440,13 +821,10 @@ class SaleOrder extends CActiveRecord
                 ':employee_id' => Common::getEmployeeID()
             )
         );
-
         foreach ($result as $record) {
             $sale_id = $record['sale_id'];
         }
-
         return $sale_id;
-
     }
 
     public function cancelOrderMenu($desk_id, $group_id, $location_id)
@@ -642,6 +1020,21 @@ class SaleOrder extends CActiveRecord
         return isset($sale_order) ? $sale_order : null;
     }
 
+    public function updateConfirmedCart($sale_id,$cart_order=0)
+    {
+        $cart_status_conf=Yii::app()->params['cart_confirmed_status'];
+
+        $sql = "update sale_order_item 
+        set cart_status=:cart_status
+        where sale_id=:sale_id and cart_order=:cart_order
+        and deleted_at is null";
+        $command = Yii::app()->db->createCommand($sql);
+        $command->bindParam(":cart_status", $cart_status_conf, PDO::PARAM_INT);
+        $command->bindParam(":sale_id", $sale_id, PDO::PARAM_INT);
+        $command->bindParam(":cart_order", $cart_order, PDO::PARAM_INT);
+        $command->execute();
+    }
+
     public function getSaleOrderById($sale_id,$location_id)
     {
         $sale_order = SaleOrder::model()->find('id=:sale_id and location_id=:location_id and status=:status',
@@ -654,12 +1047,30 @@ class SaleOrder extends CActiveRecord
         return isset($sale_order) ? $sale_order : null;
     }
 
-    public function updateSaleOrderTempStatus($status)
+    public function updateSaleOrderTempStatus($status,$cart_order=0)
     {
+        //$cart_order=$v_cart_order;
+
+        //if($cart_order=='' || $cart_order=0) $cart_order=1;
+        $cart_order=($cart_order==''?0:$cart_order);
+
         $model = $this->getSaleOrderByDeskId();
+
         if ($model !== null) {
             $model->temp_status = $status;
-            $model->save();
+            //$model->status =Yii::app()->params['sale_confirmed'];
+            //$sale_item = $this->getSaleCartOrderId($model->id,$cart_order);
+            //print_r($sale_item);
+            //die();
+            if($model->save())
+            {
+                $sale_item = $this->updateConfirmedCart($model->id,$cart_order);
+                Yii::app()->orderingCart->emptyCartNum(); //if confirmed cart in session need to be cleared
+
+                //$sale_item->cart_status=Yii::app()->params['cart_confirmed_status'];
+
+                //$sale_item->save();
+            }
         }
     }
 

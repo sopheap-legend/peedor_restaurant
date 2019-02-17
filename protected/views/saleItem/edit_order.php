@@ -16,19 +16,15 @@
             'zones' => $zones,
             'table_id' => $table_id,
             'zone_id' => $zone_id,
-            'view'=>'cashier'
+            'view'=>'edit_order'
         )); ?>
 
-    <?php $this->renderPartial('partial/_right_panel_cashier', array(
+    <?php $this->renderPartial('partial/_right_panel', array(
         'model' => $model,
-        //'grid_columns' => $grid_columns,
-        //'data_provider' => $data_provider,
-        //'grid_id' => $grid_id,
         'table_info' => $table_info,
-        //'items' => $items,
-        'itemsCashier' => $itemsCashier,
-        'sub_total' => $sub_total,
-        'amount_due' => $amount_due,
+        'items' => $items_edit,
+        'sub_total' => $sub_total_indv,
+        'amount_due' => $sub_total_indv,
         'count_payment' => $count_payment,
         'payments' => $payments,
         'count_item' => $count_item,
@@ -41,11 +37,11 @@
         'ordering_status_icon' =>  $ordering_status_icon,
         'giftcard_info' => $giftcard_info,
         'giftcard_id' => $giftcard_id,
-        'header_tab' => $header_tab,
-        'cartnum' => $cartnum
+        'cartnum' => $cartnum,
+        'view'=>'edit_order'
     )); ?>
 
-    <?php $this->renderPartial('partial/_js',array('view'=>'cashier')); ?>
+    <?php $this->renderPartial('partial/_js',array('view'=>'edit_order')); ?>
 
 </div>
 

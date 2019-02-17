@@ -188,6 +188,26 @@ Yii::app()->clientScript->registerScript( 'confirmOrder', "
       ");
 ?>
 
+
+<?php
+Yii::app()->clientScript->registerScript( 'ShowTabCart', "
+        jQuery( function($){
+            $('.btn-opt li a').on('click', function(e) {
+                e.preventDefault();
+                var url=$(this).attr('href');
+                $.ajax({url:url,
+                        type : 'post',
+                        beforeSend: function() { $('.waiting').show(); },
+                        complete: function() { $('.waiting').hide(); },
+                        success : function(data) {
+                            $('#register_container').html(data);
+                          }
+                    });
+                });
+        });
+      ");
+?>
+
 <script>
     
 var submitting = false;  

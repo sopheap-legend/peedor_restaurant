@@ -11,6 +11,14 @@
 
             <div class="widget-toolbar">
 
+                <?php echo TbHtml::linkButton(Yii::t('app', 'New Order'), array(
+                    'color' => TbHtml::BUTTON_COLOR_PRIMARY,
+                    'size' => TbHtml::BUTTON_SIZE_MINI,
+                    'icon' => ' ace-icon fa fa-pencil-square-o white',
+                    'class' => 'btn-edit-order',
+                    'url' => Yii::app()->createUrl('SaleItem/index'),
+                    'title' => Yii::t('app', 'New Order'),
+                )); ?>
 
                 <?php echo TbHtml::linkButton(Yii::t('app', 'Close Register'), array(
                     'color' => TbHtml::BUTTON_COLOR_DEFAULT,
@@ -70,6 +78,12 @@
 
         </div>
 
+        <?php $this->widget('bootstrap.widgets.TbNav', array(
+            'type' => TbHtml::NAV_TYPE_TABS,
+            'htmlOptions'=>array('class'=>'btn-opt'),
+            'items' => $header_tab
+        )); ?>
+
         <div class="widget-body">
             <div class="widget-main">
                 <div class="row">
@@ -112,6 +126,8 @@
                                     'ordering_msg' => $ordering_msg,
                                     'ordering_status_span' => $ordering_status_span,
                                     'ordering_status_icon' => $ordering_status_icon,
+                                    'view' => 'cashier',
+                                    'cartnum' => $cartnum
                                 )); ?>
                             </td>
                             <td>
@@ -134,7 +150,7 @@
 
                 <br>
 
-                <div class="row">
+                <div class="row item-summary-grid">
                     <?php $this->renderPartial('partial/_right_menu_cashier', array(
                         'model' => $model,
                         //'grid_columns' => $grid_columns,
@@ -184,7 +200,7 @@
                                         'size' => TbHtml::BUTTON_SIZE_MINI,
                                         'icon' => 'glyphicon-remove',
                                         'url' => Yii::app()->createUrl('SaleItem/DeletePayment',
-                                            array('payment_id' => $payment['payment_type'])),
+                                            array('payment_id' => $payment['payment_type'],'view' => 'cashier')),
                                         'class' => 'delete-payment',
                                         'title' => Yii::t('app', 'Delete Payment'),
                                     )); ?>

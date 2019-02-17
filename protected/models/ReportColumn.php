@@ -487,4 +487,37 @@ class ReportColumn extends CModel
         );
     }
 
+    public static function getCartTab($cart_selected='')
+    {
+        $detailCart=Yii::app()->orderingCart->getDetailCartNumber();
+
+        $myCartTap =array();
+
+        if(empty($detailCart))
+        {
+            $myCartTap[]=array('label' => Yii::t('app', 'Cart0'), 'url' => Yii::app()->urlManager->createUrl('SaleItem/cashier', array('cartnum' => 0)), 'active' => true);
+        }else{
+            foreach ($detailCart as $key => $value)
+            {
+                $cartOrderNumber = $key +1; //Because array it start from 0 then we plus 1 for starting cart
+                foreach ($value as $k => $vals)
+                {
+                    if($vals==$cart_selected)
+                    {
+                        $myCartTap[]=array('label' => Yii::t('app', 'Cart'.$cartOrderNumber.''), 'url' => Yii::app()->urlManager->createUrl('SaleItem/cashier', array('cartnum' => $vals)), 'active' => true);
+                    }else{
+                        if($cartOrderNumber==1 && $cart_selected=='')
+                        {
+                            $myCartTap[]=array('label' => Yii::t('app', 'Cart'.$cartOrderNumber.''), 'url' => Yii::app()->urlManager->createUrl('SaleItem/cashier', array('cartnum' => $vals)), 'active' => true);
+                        }else{
+                            $myCartTap[]=array('label' => Yii::t('app', 'Cart'.$cartOrderNumber.''), 'url' => Yii::app()->urlManager->createUrl('SaleItem/cashier', array('cartnum' => $vals)), 'active' => false);
+                        }
+                    }
+                }
+            }
+        }
+
+        return $myCartTap;
+    }
+
 }

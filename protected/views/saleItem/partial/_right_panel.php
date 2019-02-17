@@ -77,7 +77,7 @@
                         <tr>
                             <td>
                                 <?php $form = $this->beginWidget('bootstrap.widgets.TbActiveForm', array(
-                                    'action' => Yii::app()->createUrl('saleItem/add'),
+                                    'action' => Yii::app()->createUrl('saleItem/add',array('view'=>$view,'cart_order'=>($view=='index'?0:@Yii::app()->orderingCart->getCartNum()))),
                                     'method' => 'post',
                                     'layout' => TbHtml::FORM_LAYOUT_INLINE,
                                     'id' => 'add_item_form',
@@ -107,6 +107,7 @@
                                 <?php $this->renderPartial('partial/_right_status', array(
                                     'model' => $model,
                                     'table_info' => $table_info,
+                                    'items' => $items,
                                     'time_go' => $time_go,
                                     'ordering_status' => $ordering_status,
                                     'ordering_msg' => $ordering_msg,
@@ -158,7 +159,7 @@
                     </div>
                     <div class="col-sm-6 pull-right">
                         <h4 class="pull-right">
-                            <?php echo Yii::t('app', 'Amount to Pay'); ?>
+                            <?php echo Yii::t('app', 'Amount to Pays'); ?>
                             <span class="label label-xlg label-important"><?php echo Yii::app()->settings->get('site',
                                         'currencySymbol') . number_format($amount_due,
                                         Yii::app()->shoppingCart->getDecimalPlace(), '.', ','); ?></span>
@@ -193,7 +194,7 @@
                 <?php } ?>
 
 
-                <?php if ($count_item <> 0) {
+                <?php /*if ($count_item <> 0) {
                     $this->renderPartial('partial/_right_footer',
                         array(
                             'model' => $model,
@@ -206,7 +207,7 @@
                             'giftcard_id' => $giftcard_id,
                             'view'=>'cashier'
                         ));
-                } ?>
+                } */?>
 
             </div>
             <!--/endwiget-main-->

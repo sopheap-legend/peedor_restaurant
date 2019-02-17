@@ -451,7 +451,7 @@ class ItemController extends Controller
         }
     }
 
-    public function actionSelectItem($item_parent_id,$category_id,$view='index')
+    public function actionSelectItem($item_parent_id,$category_id,$line=0,$view='index')
     {
         //$view= "'index'";
          $model = new Item('topping');
@@ -476,18 +476,18 @@ class ItemController extends Controller
 
             if (isset($_GET['ajax']) && $_GET['ajax'] == 'select-item-grid') {
                 $this->render('_select_item', array(
-                    'model' => $model, 'item_parent_id'=> $item_parent_id,'category_id'=>$category_id,'view'=> "'$view'"
+                    'model' => $model, 'item_parent_id'=> $item_parent_id,'category_id'=>$category_id,'line'=>$line,'view'=> "'$view'"
                 ));
             } else {
                 echo CJSON::encode(array(
                     'status' => 'render',
-                    'div' => $this->renderPartial('_select_item', array('model' => $model, 'item_parent_id' => $item_parent_id,'category_id'=>$category_id,'view'=> "'$view'"), true, true),
+                    'div' => $this->renderPartial('_select_item', array('model' => $model, 'item_parent_id' => $item_parent_id,'category_id'=>$category_id,'line'=>$line,'view'=> "'$view'"), true, true),
                 ));
 
                 Yii::app()->end();
             }
         } else {
-            $this->render('_select_item', array('model' => $model, 'item_parent_id' => $item_parent_id,'category_id'=>$category_id,'view'=> "'$view'"));
+            $this->render('_select_item', array('model' => $model, 'item_parent_id' => $item_parent_id,'category_id'=>$category_id,'line'=>$line,'view'=> "'$view'"));
         }
     }
 

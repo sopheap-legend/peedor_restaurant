@@ -46,33 +46,32 @@ class SaleItemController extends Controller
     
     public function actionIndex() 
     {
+        //$data['cartnum']=0;
+
         $this->reload();
     }
 
-    public function actionCashier()
+    public function actionCashier($cartnum='')
     {
-        $data = $this->sessionInfo();
+        $data['cartnum']=  $cartnum;
+        //$model = new SaleItem;
 
-        $model = new SaleItem;
-
-        $data['model'] = $model;
-        //$data['sale_id'] = $id;
-
-        $data['grid_id'] = 'rpt-item-detail-grid';
-        //$data['title'] = Yii::t('app','ParentID #') .' ' . $item_id  ;
-
-        $data['grid_columns'] = ReportColumn::getItemsColumns();
-
-        //$model->sale_id = $id;
-        $data['data_provider'] = Yii::app()->orderingCart->getCartCashier();
-
-        //$this->reload('partial/_grid',$data);
+        //$data['model'] = $model;
 
         $this->reload('cashier',$data);
     }
     
-    public function actionAdd($view='index')
+    public function actionAdd($view='index',$cart_order=0)
     {
+        $cart_order=($cart_order==''?0:$cart_order);
+        if($view=='index')
+        {
+            $method='add';
+        }else{
+            $method='edit';
+        }
+
+
         if (!Yii::app()->user->checkAccess('sale.edit')) {
             throw new CHttpException(403, 'You are not authorized to perform this action');
         }   
@@ -87,8 +86,13 @@ class SaleItemController extends Controller
         if (!Yii::app()->orderingCart->getTableId()) {
             Yii::app()->user->setFlash('warning', Yii::t('app','Please, Select a Table'));
         } else {
-            $result_id = Yii::app()->orderingCart->addItem($item_id);
-            if ($result_id == 0 )  {
+            $result_id = Yii::app()->orderingCart->addItem($item_id,1,0,$cart_order,$method);
+            $my_result= explode(';',$result_id);
+            //after add item then add cartID to the session
+            Yii::app()->orderingCart->setCartNum($my_result[1]);
+            $data['cartnum']=Yii::app()->orderingCart->getCartNum();
+
+            if ($my_result[0] == 0 )  {
                 Yii::app()->user->setFlash('warning', Yii::t('app','Product was not found in the system'));
             }
         }
@@ -116,20 +120,20 @@ class SaleItemController extends Controller
         }
     }
 
-    public function actionIndexPara($item_id,$item_parent_id,$view='index')
+    public function actionIndexPara($item_id,$item_parent_id,$line=0,$view='index')
     {
         if (Yii::app()->user->checkAccess('sale.edit')) {
-            Yii::app()->orderingCart->addItem($item_id,1,$item_parent_id);
+            Yii::app()->orderingCart->addTopping($item_id,1,$item_parent_id,$line);
             $this->reload($view);
         } else {
             throw new CHttpException(403, 'You are not authorized to perform this action');
         }
     }
 
-    public function actionDeleteItem($item_id,$line,$item_parent_id,$view='index')
+    public function actionDeleteItem($item_id,$line,$item_parent_id,$child_id,$view='index')
     {
         if (Yii::app()->request->isPostRequest) {
-            Yii::app()->orderingCart->deleteItem($item_id,$line,$item_parent_id);
+            Yii::app()->orderingCart->deleteItem($item_id,$line,$item_parent_id,$child_id);
             if (Yii::app()->request->isAjaxRequest) {
                 $this->reload($view);
             }
@@ -169,16 +173,14 @@ class SaleItemController extends Controller
     {
         if (Yii::app()->request->isPostRequest && Yii::app()->request->isAjaxRequest) {
             $data= array();
-
             // To ensure the current serving table had not been printed or completed by someone else
-            $data['items'] = Yii::app()->orderingCart->getCart();
-            
+            $data['items'] = Yii::app()->orderingCart->getOrderCart4Payment();
+            //print_r($data['items']);
             if (count($data['items']) == 0) {
                 $data['warning'] = Yii::t('app','The serving table had been printed or changed.');
             } else if ("" == trim($_POST['payment_amount']) ) {
                 $data['warning']=Yii::t('app',"Please enter value in payment amount");
             } else {
-                //print_r($_POST); die();
                 $payment_id = $_POST['payment_id'];
                 $payment_amount = $_POST['payment_amount'];
                 Yii::app()->orderingCart->addPayment($payment_id, $payment_amount);
@@ -189,11 +191,11 @@ class SaleItemController extends Controller
         }
     }
 
-    public function actionDeletePayment($payment_id)
+    public function actionDeletePayment($payment_id,$view='cashier')
     {
         if (Yii::app()->request->isPostRequest && Yii::app()->request->isAjaxRequest) {
             Yii::app()->orderingCart->deletePayment($payment_id);
-            $this->reload();
+            $this->reload($view);
         } else {
             throw new CHttpException(400, 'Invalid request. Please do not repeat this request again.');
         }
@@ -422,7 +424,7 @@ class SaleItemController extends Controller
         if (count($data['items']) == 0) {
             $data['warning'] = Yii::t('app','There is no sale transaction today.');
             Yii::app()->user->setFlash('warning', Yii::t('app', "There is no sale transaction today."));
-            $this->reload($data);
+            $this->reload('cashier',$data);
         } else {
             Yii::app()->session->close();
             $this->render('partial/_receipt_close_sale', $data);
@@ -430,11 +432,10 @@ class SaleItemController extends Controller
 
     }
 
-    public function actionConfirmOrder($view='cashier')
+    public function actionConfirmOrder($view='cashier',$cart_order=0)
     {
-
         $data=$this->sessionInfo();
-        SaleOrder::model()->updateSaleOrderTempStatus(Yii::app()->params['str_one']);
+        SaleOrder::model()->updateSaleOrderTempStatus(Yii::app()->params['str_one'],$cart_order);
 
         if (count($data['items']) == 0) {
             $data['warning'] = Yii::t('app','The serving table had been printed or changed.');
@@ -446,23 +447,25 @@ class SaleItemController extends Controller
 
     }
 
-    public function actionEditOrdered($view='index')
+    public function actionEditOrdered($view='index',$cartnum=0)
     {
         if (!Yii::app()->user->checkAccess('sale.edit')) {
             throw new CHttpException(403, 'You are not authorized to perform this action');
         }
 
-        $this->reload($view);
+        $data['cartnum']=$cartnum;
+        Yii::app()->orderingCart->setCartNum($data['cartnum']);
+
+        $this->reload($view,$data);
     }
 
     public function actionCompleteSale()
-    {   
+    {
         $this->layout = '//layouts/column_receipt';
-        
-        $data=$this->sessionInfo();
 
+        $data=$this->sessionInfo();
         $data['sale_id']= SaleOrder::model()->orderSave($data['table_id'],$data['group_id'],$data['payment_total']);
-        
+
         if ($data['sale_id'] == -1) {
             $data['warning']=Yii::t('app','The serving table had been printed or changed.');
             Yii::app()->orderingCart->clearAll();
@@ -470,12 +473,12 @@ class SaleItemController extends Controller
         } else {
             Yii::app()->orderingCart->clearAll();
             Yii::app()->session->close(); // very thankful to this forum http://www.yiiframework.com/forum/index.php/topic/30122-cdbhttpsession-and-ccontroller-redirect/
-            
+
             /* Added this step (Update Sale_Order status to 0=completed) at the end of func_save_sale  */
             //SaleOrder::model()->delOrder($data['table_id'], $data['group_id'],Yii::app()->getsetSession->getLocationId());
-            
+
             $this->render('partial/_receipt', $data);
-           
+
         }
     }
  
@@ -592,6 +595,16 @@ class SaleItemController extends Controller
 
         $data['model'] = $model;
         $data['status'] = 'success';
+
+        if(empty($data["cartnum"]))
+        {
+            $detailCart= array_values(Yii::app()->orderingCart->getDetailCartNumber());
+            $arr=array_shift($detailCart);
+            $data["cartnum"]=$arr['sale_id'];
+        }
+        //set cart
+        Yii::app()->orderingCart->setCartNum(@$data["cartnum"]);
+
         
         $data=$this->sessionInfo($data);
         
@@ -715,7 +728,9 @@ class SaleItemController extends Controller
 
     protected function sessionInfo($data=array())
     {
+        $data['cartnum']=Yii::app()->orderingCart->getCartNum();
         /* Define Default Variables Value */
+        $data['header_tab'] = ReportColumn::getCartTab($data['cartnum']);
         $data['sale_id'] = null;
         $data['ordering_status'] = null ;
         $data['ordering_msg'] = '';
@@ -727,6 +742,8 @@ class SaleItemController extends Controller
         $data['amount_due'] = 0;
         $data['count_payment'] = 0;
         $data['items'] = array();
+        $data['items_index'] = array();
+        $data['items_edit'] = array();
         $data['itemsCashier'] = array();
         $data['print_categories'] = array();
         $data['payments'] = array();
@@ -745,7 +762,9 @@ class SaleItemController extends Controller
             //$data['sale_id'] = Yii::app()->orderingCart->getSaleId();
 
             $data['items'] = Yii::app()->orderingCart->getCart();
-            $data['itemsCashier'] = Yii::app()->orderingCart->getCartCashier();
+            $data['items_index'] = Yii::app()->orderingCart->getCartIndex($data['cartnum']);
+            $data['items_edit'] = Yii::app()->orderingCart->getOrderCartEdit($data['cartnum']);
+            $data['itemsCashier'] = Yii::app()->orderingCart->getIndividualCard($data['cartnum']);
             $data['payments'] = Yii::app()->orderingCart->getPayments();
             $data['payment_total'] = Yii::app()->orderingCart->getPaymentsTotal();
             $data['count_payment'] = count(Yii::app()->orderingCart->getPayments());
@@ -756,6 +775,17 @@ class SaleItemController extends Controller
             $data['sub_total'] = Yii::app()->orderingCart->getSaleSubTotal();
             $data['total'] = Yii::app()->orderingCart->getSaleTotal();
             $data['discount_amount'] = Yii::app()->orderingCart->getSaleDiscount();
+
+
+            $data['count_item_indv'] = Yii::app()->orderingCart->getCartQty();
+            $data['sub_total_indv'] = Yii::app()->orderingCart->getCartSubTotal();
+            $data['total_indv'] = Yii::app()->orderingCart->getCartTotal();
+            $data['discount_amount_indv'] = Yii::app()->orderingCart->getCartDiscount();
+
+            $data['count_item_index'] = Yii::app()->orderingCart->getIndexCartQty();
+            $data['sub_total_index'] = Yii::app()->orderingCart->getIndexCartSubTotal();
+            $data['total_index'] = Yii::app()->orderingCart->getIndexCartTotal();
+            $data['discount_amount_index'] = Yii::app()->orderingCart->getIndexCartDiscount();
 
             $data['giftcard_id'] = Yii::app()->orderingCart->getDisGiftcard();
             $data['price_tier_id'] = Yii::app()->orderingCart->getPriceTier();

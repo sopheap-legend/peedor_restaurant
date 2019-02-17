@@ -22,9 +22,9 @@
     <?php $this->renderPartial('partial/_right_panel', array(
         'model' => $model,
         'table_info' => $table_info,
-        'items' => $items,
-        'sub_total' => $sub_total,
-        'amount_due' => $amount_due,
+        'items' => $items_index,
+        'sub_total' => @$sub_total_index,
+        'amount_due' => @$sub_total_index,
         'count_payment' => $count_payment,
         'payments' => $payments,
         'count_item' => $count_item,
@@ -36,7 +36,9 @@
         'ordering_status_span' => $ordering_status_span,
         'ordering_status_icon' =>  $ordering_status_icon,
         'giftcard_info' => $giftcard_info,
-        'giftcard_id' => $giftcard_id
+        'giftcard_id' => $giftcard_id,
+        'cartnum' => $cartnum,
+        'view'=>'index'
     )); ?>
 
     <?php $this->renderPartial('partial/_js',array('view'=>'index')); ?>

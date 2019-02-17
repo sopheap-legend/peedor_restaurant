@@ -28,6 +28,7 @@
             $line = $item['line'];
             $item_parent_id = $item['item_parent_id'];
             $unit_name = '';
+            $child_id=$item['child_id'];
             ?>
             <tr>
                 <td>
@@ -37,7 +38,7 @@
                         'size' => TbHtml::BUTTON_SIZE_MINI,
                         'icon' => 'glyphicon-hand-up white',
                         'url' => $this->createUrl('Item/SelectItem/',
-                            array('item_parent_id' => $item_id, 'category_id' => $item['category_id'])),
+                            array('item_parent_id' => $item_id, 'category_id' => $item['category_id'],'line'=>$line)),
                         'class' => 'update-dialog-open-link',
                         'data-update-dialog-title' => Yii::t('app', 'Select Topping'),
                     )); ?>
@@ -103,7 +104,8 @@
                             'DeleteItem',
                             'item_id' => $item_id,
                             'line' => $line,
-                            'item_parent_id' => $item['item_parent_id']
+                            'item_parent_id' => $item['item_parent_id'],
+                            'child_id'=>$child_id
                         ),
                         'class' => 'delete-item',
                         //3'title' => Yii::t( 'app', 'Remove' ),
