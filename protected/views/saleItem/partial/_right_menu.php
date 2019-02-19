@@ -38,7 +38,7 @@
                         'size' => TbHtml::BUTTON_SIZE_MINI,
                         'icon' => 'glyphicon-hand-up white',
                         'url' => $this->createUrl('Item/SelectItem/',
-                            array('item_parent_id' => $item_id, 'category_id' => $item['category_id'],'line'=>$line)),
+                            array('item_parent_id' => $item_id, 'category_id' => $item['category_id'],'line'=>$line,'view' =>@$view)),
                         'class' => 'update-dialog-open-link',
                         'data-update-dialog-title' => Yii::t('app', 'Select Topping'),
                     )); ?>
@@ -105,7 +105,8 @@
                             'item_id' => $item_id,
                             'line' => $line,
                             'item_parent_id' => $item['item_parent_id'],
-                            'child_id'=>$child_id
+                            'child_id'=>$child_id,
+                            'view' => @$view
                         ),
                         'class' => 'delete-item',
                         //3'title' => Yii::t( 'app', 'Remove' ),

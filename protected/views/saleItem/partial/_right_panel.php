@@ -145,6 +145,7 @@
                         'count_payment' => $count_payment,
                         'count_item' => $count_item,
                         'form' => $form,
+                        'view' => $view
                     )); ?>
                 </div>
 
